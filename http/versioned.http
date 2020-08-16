@@ -1,0 +1,10 @@
+### /api/{version}hi path-variable
+GET {{host}}/api/v1/hi
+
+### /api/hi header
+GET {{host}}/api/hi
+X-API-Version: v2
+
+### /api/hi content-negotiation
+GET {{host}}/api/hi
+Accept: application/vnd.bootiful.demo-v2+json

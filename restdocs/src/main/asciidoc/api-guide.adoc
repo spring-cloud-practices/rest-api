@@ -1,0 +1,92 @@
+= Customers API Guide
+:doctype: book
+:toc:
+:sectanchors:
+:sectlinks:
+:toclevels: 4
+:source-highlighter: highlightjs
+
+[[overview]]
+= Overview
+
+[[overview-http-verbs]]
+== HTTP verbs
+
+The Customers API follows the standard HTTP REST conventions and supports the verbs listed below.
+
+|===
+| Verb | Usage
+
+| `GET`
+| Used to retrieve a resource
+
+| `POST`
+| Used to create a new resource
+
+| `PUT`
+| Used to update an existing resource
+
+| `DELETE`
+| Used to delete an existing resource
+|===
+
+[[overview-http-status-codes]]
+== HTTP status codes
+
+The Customer API uses the following HTTP status codes.
+
+|===
+| Status code | Usage
+
+| `200 OK`
+| The request completed successfully
+
+| `201 Created`
+| A resource has been updated or created successfully. The resource's URI is available from the response's
+`Location` header
+
+| `400 Bad Request`
+| The request was malformed. The response body will include an error providing further information
+
+| `404 Not Found`
+| The requested resource did not exist
+|===
+
+[[overview-errors]]
+== Errors
+
+For example, a create a profile photo on a customer that does not exist results in a `400 Bad Request` response:
+
+include::{snippets}/error-example/http-response.adoc[]
+
+[[overview-hypermedia]]
+== Hypermedia
+
+The Customer API v2 uses hypermedia and resources include links to other resources in their
+responses. Responses are in http://stateless.co/hal_specification.html[Hypertext Application
+Language (HAL)] format. Links can be found benath the `_links` key. Users of the API should
+not created URIs themselves, instead they should use the above-described links to navigate
+from resource to resource.
+
+[[resources]]
+= Resources
+
+[[resources-customers]]
+== Customers
+
+The Customers resource is used to create and list customers
+
+[[resources-customers-list]]
+=== Listing customers
+
+A `GET` request will list all of the service's customers.
+
+==== Example request
+
+include::{snippets}/index-example/http-request.adoc[]
+
+==== Example response
+
+include::{snippets}/index-example/http-response.adoc[]
+
+
