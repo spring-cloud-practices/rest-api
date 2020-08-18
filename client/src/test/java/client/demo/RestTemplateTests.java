@@ -5,13 +5,13 @@ import client.domo.Movie;
 import client.domo.MovieRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.annotation.After;
-import org.aspectj.lang.annotation.Before;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.io.Resource;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -70,12 +70,15 @@ public class RestTemplateTests {
         log.info("the new movie lives at " + uriOfNewMovie);
 
         // <2>
+        assert uriOfNewMovie != null;
         JsonNode mapForMovieRecord = restTemplate.getForObject(uriOfNewMovie, JsonNode.class);
         log.info("\t..read as a Map.class: " + mapForMovieRecord);
-        Assertions.assertEquals(mapForMovieRecord.get("title").asText(), postMovieResponseEntity.getBody().title);
+        assert mapForMovieRecord != null;
+        Assertions.assertEquals(mapForMovieRecord.get("title").asText(), Objects.requireNonNull(postMovieResponseEntity.getBody()).title);
 
         // <3>
         Movie movieReference = restTemplate.getForObject(uriOfNewMovie, Movie.class);
+        assert movieReference != null;
         Assertions.assertEquals(movieReference.title, postMovieResponseEntity.getBody().title);
         log.info("\t..read as a Movie.class: " + movieReference);
 

@@ -27,7 +27,7 @@
             </exclusions>
         </dependency>
 
-        <!-- spring boot restdocs -->
+        <!-- spring restdocs -->
         <dependency>
             <groupId>org.springframework.restdocs</groupId>
             <artifactId>spring-restdocs-mockmvc</artifactId>

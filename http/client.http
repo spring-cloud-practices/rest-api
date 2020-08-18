@@ -1,0 +1,48 @@
+### /movies
+GET {{host}}/movies
+
+### /profile/movies
+GET {{host}}/profile/movies
+
+### /movies/1
+GET {{host}}/movies/1
+
+### /movies/1/actors
+GET {{host}}/movies/1/actors
+
+### {{host}}/movies
+POST {{host}}/movies
+Content-Type: application/json
+
+{
+  "title": "movie title 10"
+}
+
+### {{host}}/movies/10
+PUT {{host}}/movies/10
+Content-Type: application/json
+
+{
+  "title": "movie title 10-1"
+}
+
+### {{host}}/movies/10
+DELETE {{host}}/movies/10
+
+### /actors
+GET {{host}}/actors
+
+### /profile/actors
+GET {{host}}/profile/actors
+
+### /actor/search
+GET {{host}}/actors/search
+
+### /actor/search/by-movie{?movie,page,size,sort}
+GET {{host}}/actors/search/by-movie?movie=Cars&page=0&size=20
+
+### /actors/4
+GET {{host}}/actors/4
+
+### /actors/4/movie
+GET {{host}}/actors/4/movie

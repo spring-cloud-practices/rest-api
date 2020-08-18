@@ -2,527 +2,444 @@
 Spring REST API 예제입니다.  
 
 # 목차  
-
 - [Getting Started](#Getting-Started)  
 - [Overview](#Overview)  
 - [Version](#Version)
 - [Restdocs](#Restdocs)
 - [Client](#Client)
 - [References](#References)    
-  
+
 
 ---  
 
-# Getting Started
-> ## 수정사항
-- JPA method findOne() -> findById() or getOne()
-https://hspmuse.tistory.com/entry/springboot-15x-%EC%97%90%EC%84%9C-springboot-20x-%EB%84%98%EC%96%B4%EA%B0%80%EB%A9%B4%EC%84%9C-%EC%83%9D%EA%B8%B4%EC%9D%BC
 
-- EmbeddedServletContainerInitializedEvent removed
+# 버전에 따른 코드수정 사항
+> ## spring boot 1.5.x -> spring boot 2.2.x 수정사항
+- JPA method `findOne()` -> `findById()` or `getOne()`  
+[springboot 1.5.x 에서 springboot 2.0.x 넘어가면서 생긴일..](https://hspmuse.tistory.com/entry/springboot-15x-%EC%97%90%EC%84%9C-springboot-20x-%EB%84%98%EC%96%B4%EA%B0%80%EB%A9%B4%EC%84%9C-%EC%83%9D%EA%B8%B4%EC%9D%BC)  
+- `EmbeddedServletContainerInitializedEvent` removed  
 https://stackoverflow.com/questions/56982909/why-i-am-getting-this-error-embeddedservletcontainerinitializedevent-cannot-be
-
-- ResourceSupport changed to RepresentationModel
-- Resource changed to EntityModel
-- Resources changed to CollectionModel
-- PagedResources changed to PagedModel
-- ResourceAssembler changed to RepresentationModelAssembler
+- `ResourceSupport` changed to `RepresentationModel`
+- `Resource` changed to `EntityModel`
+- `Resources` changed to `CollectionModel`
+- `PagedResources` changed to `PagedModel`
+- `ResourceAssembler` changed to `RepresentationModelAssembler`  
 https://stackoverflow.com/questions/25352764/hateoas-methods-not-found
 
-> ## Project 구조  
-
+# Project 구조
 ```cmd
-❯ tree ./ -L 3
-./
-├── compose                                    <-- docker compose 모음
-│   └── rabbitmq                         <-- rabbitmq docker compose
-│       ├── docker-compose.yaml
-│       └── rabbitmq-isolated.conf
-├── config-client                               <-- spring cloud config client
-├── config-server                               <-- spring cloud config server
-└── scripts
-    └── start.sh                                <-- spring cloud config server/client 시작 script
+❯ tree
+├─client                                <-- rest template / traverson client
+├─http                                  <-- http request file
+│   ├── restdocs.http
+│   └── version.http
+├─restdocs                              <-- spring rest docs
+├─scripts                               <-- start scripts
+│   └── start.sh
+└─version                               <-- api versioning
 ```  
 
 
-
-
-> ## local git repository 초기화하기  
-
+# version module (API Versioning)
+> ## version server 시작하기  
 ```cmd
-$ cd ${HOME}
-$ mkdir config-repo
-$ cd config-repo
-$ git init
-$ vi demo-default.yaml
-$ vi demo-dev.yaml
-$ git add .
-$ git commit -m "initial"
+$ ./scripts/start.sh version
 ```  
 
 
+> ## api 요청
+아래와 같은 4가지 Endpoint가 존재한다.
+```java
+package version.demo;
 
-> ## properties file  
+import org.springframework.web.bind.annotation.*;
 
-```yaml
-# demo-default.yaml
-application:
-  message: "1. sample message for demo in default stage"
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-# demo-dev.yaml
-application:
-  message: "1. sample message for demo in dev stage" 
-```  
+@RestController
+@RequestMapping("/api")
+public class VersionedRestController {
 
+    private static final String V1_MEDIA_TYPE_VALUE = "application/vnd.bootiful.demo-v1+json";
+    private static final String V2_MEDIA_TYPE_VALUE = "application/vnd.bootiful.demo-v2+json";
 
-
-> ## Spring cloud config server 시작하기  
-
-```cmd
-// local git을 EnvironmentRepository로 사용하는 Config server를 시작
-$ ./scripts/start.sh server
-```  
-
-
-
-> ## Config 정보 가져오기  
-
-아래와 같은 2가지 Endpoint가 존재한다.  
-- /config-server/{application}/{env}
-- /config-server/{application}/{env}/{label(commit id, branch name, or tag)}  
-
-```cmd
-$ curl -XGET http://localhost:8888/config-server/demo/default,dev | jq .
-{
-  "name": "demo",
-  "profiles": [
-    "default,dev"
-  ],
-  "label": null,
-  "version": "36caf2327f83f607fade9d5af47a24133315745d",
-  "state": null,
-  "propertySources": [
-    {
-      "name": "file:///Users/evan.kim/config-repo/demo-dev.yaml",
-      "source": {
-        "application.message": "1. sample message for demo in dev stage"
-      }
-    },
-    {
-      "name": "file:///Users/evan.kim/config-repo/demo-default.yaml",
-      "source": {
-        "application.message": "1. sample message for demo in default stage"
-      }
+    @GetMapping(value = "/{version}/hi", produces = APPLICATION_JSON_VALUE)
+    public Greeting greetingWithPathVariable(@PathVariable ApiVersion version) {
+        return greet(version, "path-variable");
     }
-  ]
+
+    @GetMapping(value = "/hi", produces = APPLICATION_JSON_VALUE)
+    public Greeting greetWithHeader(@RequestHeader("X-API-Version") ApiVersion version) {
+        return greet(version, "header");
+    }
+
+    @GetMapping(value = "/hi", produces = V1_MEDIA_TYPE_VALUE)
+    public Greeting greetWithContentNegotiationV1() {
+        return greet(ApiVersion.v1, "content-negotiation");
+    }
+
+    @GetMapping(value = "/hi", produces = V2_MEDIA_TYPE_VALUE)
+    public Greeting greetWithContentNegotiationV2() {
+        return greet(ApiVersion.v2, "content-negotiation");
+    }
+
+    private Greeting greet(ApiVersion version, String how) {
+        return new Greeting(how, version);
+    }
+
+}
+```
+
+
+- http 디렉토리의 `version.http`의 http 요청을 실행한다.  
+```
+### /api/{version}hi path-variable
+GET {{host}}/api/v1/hi
+
+### /api/hi header
+GET {{host}}/api/hi
+X-API-Version: v2
+
+### /api/hi content-negotiation
+GET {{host}}/api/hi
+Accept: application/vnd.bootiful.demo-v2+json
+```
+
+
+- `path-variable`을 이용한 버저닝 
+```
+GET http://localhost:8080/api/v1/hi
+
+HTTP/1.1 200 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 14:05:56 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+{
+  "how": "path-variable",
+  "version": "v1"
 }
 
-// server log
-2020-07-30 23:20:23.807  WARN 26928 --- [nio-8888-exec-1] demo.server.LoggerAspect                 : ## EnvironmentController called: Environment org.springframework.cloud.config.server.environment.EnvironmentController.defaultLabel(String,String)
-2020-07-30 23:20:23.809  WARN 26928 --- [nio-8888-exec-1] demo.server.LoggerAspect                 : name : demo / profiles : default,dev / label : null
-2020-07-30 23:20:23.814  WARN 26928 --- [nio-8888-exec-1] demo.server.LoggerAspect                 : ## EnvironmentRepository(SearchPathCompositeEnvironmentRepository)::findOne is called
-2020-07-30 23:20:23.814  WARN 26928 --- [nio-8888-exec-1] demo.server.LoggerAspect                 : application: demo / profile : default,dev / label : null
-org.springframework.cloud.config.server.environment.SearchPathCompositeEnvironmentRepository$$EnhancerBySpringCGLIB$$5b69a901.findOne(<generated>)
-org.springframework.cloud.config.server.environment.EnvironmentEncryptorEnvironmentRepository.findOne(EnvironmentEncryptorEnvironmentRepository.java:61)
-org.springframework.cloud.config.server.environment.EnvironmentController.getEnvironment(EnvironmentController.java:136)
-org.springframework.cloud.config.server.environment.EnvironmentController.defaultLabel(EnvironmentController.java:108)
-org.springframework.cloud.config.server.environment.EnvironmentController$$FastClassBySpringCGLIB$$1ca0c4b5.invoke(<generated>)
-org.springframework.cloud.config.server.environment.EnvironmentController$$EnhancerBySpringCGLIB$$6d096709.defaultLabel(<generated>)
-org.springframework.cloud.config.server.environment.EnvironmentController$$EnhancerBySpringCGLIB$$c7e5ca57.defaultLabel(<generated>)
+Response code: 200; Time: 271ms; Content length: 38 bytes
 ```  
 
-- config-repo의 설정파일을 변경한 후 요청하면 변경 된 정보를 확인할 수 있다.
-- 매 요청마다 EnvironmentRepository에서 findOne() 메소드를 호출하여 설정 정보를 조회한다.  
-(git repository를 이용하는 경우 git fetch를 이용)  
+
+- `header(X-API-Version)`를 이용한 버저닝
+```
+GET http://localhost:8080/api/hi
+
+HTTP/1.1 200 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 14:09:39 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+{
+  "how": "header",
+  "version": "v2"
+}
+
+Response code: 200; Time: 31ms; Content length: 31 bytes
+```
 
 
+- `컨텐츠 협상(Content Negotiation)`을 이용한 버저닝
+```
+GET http://localhost:8080/api/hi
 
-> ## Spring cloud config server 시작하기  
+HTTP/1.1 200 
+Content-Type: application/vnd.bootiful.demo-v2+json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 14:10:21 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
 
+{
+  "how": "content-negotiation",
+  "version": "v2"
+}
+
+Response code: 200; Time: 31ms; Content length: 44 bytes
+```
+
+요청에 따라 응답값(version, how)이 변경된 것을 확인할 수 있다.
+
+
+---
+
+
+# restdocs module (spring restdocs)
+> ## restdocs 생성하기
+```cmd
+$ ./scripts/install.sh restdocs
+```  
+
+
+> ## 생성된 restdocs 파일 확인하기  
+```cmd
+$ ls restdocs/target/generated-snippets/
+error-example/  index-example/
+$ ls restdocs/target/generated-docs/
+api-guide.html
+```  
+
+
+> ## restdocs server 시작하기  
+```cmd
+$ ./scripts/start.sh restdocs
+```  
+
+> ## 생성된 html 웹 서버에서 확인하기   
+- http 디렉토리의 `restdocs.http`의 http 요청을 실행한다.  
+```
+### /api/docs/api-guide.html
+GET {{host}}/docs/api-guide.html
+```
+
+- restdocs html 문서 내용 중략
+```
+GET http://localhost:8080/docs/api-guide.html
+
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Last-Modified: Tue, 18 Aug 2020 14:27:21 GMT
+Cache-Control: no-store
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 39335
+Date: Tue, 18 Aug 2020 14:32:34 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!--[if IE]>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Asciidoctor 1.5.8">
+
+    ......
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>
+
+Response code: 200; Time: 0ms; Content length: 39335 bytes
+```
+
+> ## 빌드 플러그인 설정 
+`pom.xml` 파일의 `build` -> `plugins`에 설정이 필요하다.
+
+- `asciidoctor-maven-plugin` 설정 시 `generated-snippets` 폴더 및 하위파일과 `generated-docs` 폴더 및 하위파일이 생성된다.
+- `maven-resources-plugin` 설정은 웹 서버 기동 시 `generated-docs/api-guide.html` 파일을 `resources/static/docs/` 에 복사한다.
+
+
+---
+
+
+# client module (`RestTemplate` / `Traverson`)
+> ## client server 시작하기
 ```cmd
 $ ./scripts/start.sh client
-```  
+```
 
+> ## rest api 확인하기
+`spring-boot-starter-data-rest` 의존성을 주입하면 생성한 Repository에 대한 rest api를 자동으로 생성해준다.
+- http 디렉토리의 `client.http`의 http 요청을 실행한다.
+```
+### /movies
+GET {{host}}/movies
 
+### /movies/1
+GET {{host}}/movies/1
 
-> ## Config client의 property 확인하기  
+...
 
-```cmd
-$ curl -XGET http://localhost:8080/message                                                                                                                                                                                                                                                                                                                                                     master-!
-1. sample message for demo in default stage
-```  
+### /actors
+GET {{host}}/actors
 
+### /actor/search
+GET {{host}}/actors/search
 
+### /actor/search/by-movie{?movie,page,size,sort}
+GET {{host}}/actors/search/by-movie?movie=Cars&page=0&size=20
+```
 
-- config-repo 에서 설정 파일 값을 변경  
+- get /actors 요청 결과 중 `_links` 정보를 확인하여 다른 api 요청을 할 수 있다.
+```
+GET http://localhost:8080/actors
 
-> ## Config client의 Refresh  
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Content-Type: application/hal+json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 16:46:11 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
 
-```cmd
-// get property (refresh 전)
-$ curl -XGET http://localhost:8080/message
-1. sample message for demo in default stage
-
-// actuator를 이용해서 refresh
-$ curl -XPOST http://localhost:8080/actuator/refresh 
-["config.client.version","application.message"]
-
-// get property (refresh 후)  
-$ curl -XGET http://localhost:8080/message
-2. sample message for demo in default stage
-
-// custom endpoint를 이용해서 refresh   
-$ curl -XPOST http://localhost:8080/refresh
-["config.client.version","application.message"]
-3. sample message for demo in default stage 
-```  
-
-
-
-> ## event bus를 이용하여 refresh 메시지 전달  
-
-```cmd  
-// rabbitmq 실행하기  
-$ cd compose/rabbitmq
-$ docker-compose up -d  
-
-// config server 실행하기  
-$ ./scripts/start.sh server default,rabbitmq
-
-// config client 실행하기  
-$ ./scripts/start.sh client default,rabbitmq
-
-// get property  
-$ curl -XGET http://localhost:8080/message
-3. sample message for demo in default stage
-
-// config 변경 후 config server로 이벤트 전송  
-$ curl -XPOST http://localhost:8888/actuator/bus-refresh
-
-// get property  
-$ curl -XGET http://localhost:8080/message
-4. sample message for demo in default stage
-```  
-
-
-
----  
-
-# Overview  
-설정 정보를 변경하면 아래와 같은 문제가 발생한다.  
-
-- 애플리케이션을 재시작 해야한다.  
-- 어떤 설정 정보가 수정되었는지 확인할 방법이 없고, 수정 내용을 이전 상태로 복구 할 방법이 없다(추적성이 없다).  
-- 설정이 여기저기 분산되어 있어서 어디에서 어떤 설정 정보를 변경해야 하는지 파악하기 어렵다.  
-- 손쉬운 압호화/복호화 방법이 없다.  
-
-이러한 문제들을 Spring cloud config를 통해서 해결할 수 있다.  
-
----  
-
-# Version
-
-> ## Spring cloud config 구성  
-
-![Spring cloud config](./assets/01_spring_cloud_config.png)  
-
-
-
-
-> ## Spring cloud config server/client 동작방식   
-
-![Spring cloud config flow](./assets/02_spring_cloud_config_flow.png)  
-
-
-
----  
- 
-# Restdocs
-
-- 스프링 클라우드 설정 서버가 제공하는 REST API를 통해서 설정 정보를 읽을 수 있다.  
-- config client <-> config server와 config-server와 environment repository 사이에 보안 기능을 추가할 수 있다.  
-- `refresh`라는 새로운 `scope`를 통해 재시작 없이 설정 정보 갱신이 가능하다.  
-- 기본적으로 {application} / {profiles} / {label} 라는 3가지 키 값을 가지고 설정 정보를 제공한다.  
-
-> application.yaml  
-
-```yaml
-server:
-  port: 8888
-
-logging:
-  level:
-    root: warn
-
-spring:
-  application:
-    name: "config-server"
-  cloud:
-    config:
-      server:
-        prefix: /config-server
-        git:
-          # default 0, 매 요청마다 fetch
-          # 단위는 Second 이며 (refresh > 0 && (now() - lastRefresh) < (refreshRate * 1000) 면 fetch 하지 않음
-          refreshRate: 5
-          # uri: https://github.com/evagova/config-repo
-          uri: file://${user.home}/config-repo
-
----
-spring:
-  profiles: jdbc
-  datasource:
-    url: jdbc:h2:mem:testdb?DB_CLOSE_ON_EXIT=FALSE
-    username: root
-    password: root
-    driver-class-name: org.h2.Driver
-  cloud:
-    config:
-      server:
-        jdbc:
-          sql: SELECT KEY, VALUE from PROPERTIES where APPLICATION=? and PROFILE=? and LABEL=?
-          order: 1
-
----
-spring:
-  profiles: rabbitmq
-  cloud:
-    bus:
-      env:
-        enabled: true
-      refresh:
-        enabled: true
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672
-    username: user
-    password: secret
-management:
-  endpoints:
-    web:
-      base-path: /actuator
-      exposure:
-        include: ['bus-refresh']
-```  
-
-
-
-> @EnableConfigServer로 서버 구성  
-
-- `@EnableConfigServer` 설정 만으로 쉽게 Config server를 구축할 수 있다.  
-- `org.springframework.cloud.config.server.config.ConfigServerAutoConfiguration`를 통해 Auto configure를 확인할 수 있다.
-
-```java
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.bus.BusAutoConfiguration;
-import org.springframework.cloud.config.server.EnableConfigServer;
-
-@SpringBootApplication(
-        exclude = {
-                BusAutoConfiguration.class
+{
+  "_embedded": {
+    "actors": [
+      {
+        "fullName": "Owen Wilson",
+        "_links": {
+          "self": {
+            "href": "http://localhost:8080/actors/2"
+          },
+          "actor": {
+            "href": "http://localhost:8080/actors/2"
+          },
+          "movie": {
+            "href": "http://localhost:8080/actors/2/movie"
+          }
         }
-)
-@EnableConfigServer
-public class ConfigServerApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ConfigServerApplication.class, args);
+      },
+      ...
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/actors"
+    },
+    "profile": {
+      "href": "http://localhost:8080/profile/actors"
+    },
+    "search": {
+      "href": "http://localhost:8080/actors/search"
     }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 6,
+    "totalPages": 1,
+    "number": 0
+  }
 }
-```  
 
+Response code: 200; Time: 78ms; Content length: 2428 bytes
+```
 
+- `_links` 정보 중 `search` api 호출 결과
+```
+GET http://localhost:8080/actors/search
 
-> org.springframework.cloud.config.server.environment.EnvironmentController  
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Content-Type: application/hal+json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 16:49:10 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
 
-- 기본적으로 아래와 같은 2가지의 Path를 통해 Environment(설정 정보)를 조회할 수 있다.
-    - /{spring.cloud.config.server.prefix}/{name}/{profiles}
-    - /{spring.cloud.config.server.prefix}/{name}/{profiles}/{label}
-- 더 많은 Endpoint는 `EnvironmentController` 클래스를 살펴보자. 
-
-```java
-package org.springframework.cloud.config.server.environment;
-
-...
-
-@RestController
-@RequestMapping(method = RequestMethod.GET,
-		path = "${spring.cloud.config.server.prefix:}")
-public class EnvironmentController {
-	private EnvironmentRepository repository;
-    ...
-	@RequestMapping(path = "/{name}/{profiles:.*[^-].*}",
-			produces = MediaType.APPLICATION_JSON_VALUE)
-	public Environment defaultLabel(@PathVariable String name,
-			@PathVariable String profiles) {
-		return getEnvironment(name, profiles, null, false);
-	}
-
-	@RequestMapping(path = "/{name}/{profiles:.*[^-].*}",
-			produces = EnvironmentMediaType.V2_JSON)
-	public Environment defaultLabelIncludeOrigin(@PathVariable String name,
-			@PathVariable String profiles) {
-		return getEnvironment(name, profiles, null, true);
-	}
-
-	@RequestMapping(path = "/{name}/{profiles}/{label:.*}",
-			produces = MediaType.APPLICATION_JSON_VALUE)
-	public Environment labelled(@PathVariable String name, @PathVariable String profiles,
-			@PathVariable String label) {
-		return getEnvironment(name, profiles, label, false);
-	}
-
-	@RequestMapping(path = "/{name}/{profiles}/{label:.*}",
-			produces = EnvironmentMediaType.V2_JSON)
-	public Environment labelledIncludeOrigin(@PathVariable String name,
-			@PathVariable String profiles, @PathVariable String label) {
-		return getEnvironment(name, profiles, label, true);
-	}        
-    
-    ...
-}   
-``` 
-
-
-
-> org.springframework.cloud.config.server.environment.EnvironmentController    
-
-- 아래와 같이 application, profile, label을 파라미터로 하는 find() 메소드를 가진 인터페이스가 존재한다.
-- `org.springframework.cloud.config.server.environment` 패키지를 살펴보면 다양한 구현체들이 존재한다.
-
-```java
-package org.springframework.cloud.config.server.environment;
-
-...
-
-public interface EnvironmentRepository {
-
-	Environment findOne(String application, String profile, String label);
-
-	default Environment findOne(String application, String profile, String label,
-			boolean includeOrigin) {
-		return findOne(application, profile, label);
-	}
+{
+  "_links": {
+    "by-movie": {
+      "href": "http://localhost:8080/actors/search/by-movie{?movie,page,size,sort}",
+      "templated": true
+    },
+    "self": {
+      "href": "http://localhost:8080/actors/search"
+    }
+  }
 }
-```  
 
+Response code: 200; Time: 31ms; Content length: 243 bytes
+```
+- `_links` 정보 중 `by-movie` api 호출 결과
+```
+GET http://localhost:8080/actors/search/by-movie?movie=Cars&page=0&size=20
 
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Content-Type: application/hal+json
+Transfer-Encoding: chunked
+Date: Tue, 18 Aug 2020 16:50:36 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
 
----  
+{
+  "_embedded": {
+    "actors": [
+      {
+        "fullName": "Owen Wilson",
+        "_links": {
+          "self": {
+            "href": "http://localhost:8080/actors/2"
+          },
+          "actor": {
+            "href": "http://localhost:8080/actors/2"
+          },
+          "movie": {
+            "href": "http://localhost:8080/actors/2/movie"
+          }
+        }
+      },
+      ...
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/actors/search/by-movie?movie=Cars&page=0&size=20"
+    }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 3,
+    "totalPages": 1,
+    "number": 0
+  }
+}
 
-# Client
+Response code: 200; Time: 187ms; Content length: 1294 bytes
+```
 
-- 스프링 클라우드 생태계에서 정상적으로 동작하려면 적절한 이름이 필요하다.  
-  - `spring.application.name`을 통해 설정이 가능하며 유일하고 실용적이고 기억하기 쉬운 이름으로 설정하자. 
-- 스프링 클라우드 기반 서비스는 `bootstrap.properties(yaml)` 파일을 이용한다.  
-- Config Client는 bootstrap.yaml 파일을 application.yaml 보다 먼저 로딩한 후 application 이름을 찾는다.   
-
-> bootstrap.yaml  
-
-```yaml
-spring:
-  profiles:
-    active: {ENV}
-  application:
-    name: demo
-  cloud:
-    config:
-      uri: http://localhost:8888/config-server
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "refresh"
-```  
-
-
-
-> @RefreshScope  
-
-- 스프링 클라우드는 `@RefreshScope` 어노테이션을 이용해서 변경 된 설정을 적용할 수 있다.
-(https://cloud.spring.io/spring-cloud-static/spring-cloud.html#_refresh_scope)  
-- actuator의 `/actuator/refresh` Endpoint를 호출하여 갱신할 수 있다.
-- actuator를 사용하지 않고 코드로 직접 Refresh 이벤트를 생성할 수 있다.
-
-
-
-
-> @RefreshScope 예제
-
+- 위와 같은 일련의 요청들(actors, search, by-movie)을 Traverson 라이브러리를 사용하면 간편하게 호출할 수 있다.
 ```java
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-...
-
 @Slf4j
-@RestController
-@RefreshScope // 새로고침 가능
-public class RefreshRestController {
+public class TraversonTests {
 
-    private final String message;
+    private Traverson traverson;
 
-    // Environment 추상화 덕분에 PropertySource에서 가져오는 방식 그대로 읽어올 수 있음
-    @Autowired
-    public RefreshRestController(@Value("${application.message}") String message) {
-        logger.warn("## RefreshController() is called. message : {}", message);
-        this.message = message;
-    }
+    @Test
+    public void tearTraverson() throws Exception {
 
-    @GetMapping("/message")
-    public String getMessage() {
-        return message;
-    }
-}
-```  
+        String nameOfMovie = "Cars";
 
+        // <1>
+        CollectionModel<Actor> actorCollectionModel = traverson
+                .follow("actors", "search", "by-movie")
+                .withTemplateParameters(Collections.singletonMap("movie", nameOfMovie))
+                .toObject(new ParameterizedTypeReference<>() {});
 
-
-> @EventListener  
-
-- `@EventListener`를 통해 refresh 이벤트 리스너를 등록할 수 있다.
-
-```java
-@Component
-public class CustomRefreshListener {
-
-    @EventListener
-    public void refresh(RefreshScopeRefreshedEvent e) {
-        logger.warn("refresh event occur. name : {} / source : {}", e.getName(), e.getSource());
+        assert actorCollectionModel != null;
+        actorCollectionModel.forEach(a -> log.info(a.toString()));
+        Assertions.assertTrue(actorCollectionModel.getContent().size() > 0);
+        Assertions.assertEquals(
+                (int) actorCollectionModel.getContent().stream()
+                        .filter(a -> a.fullName.equals("Owen Wilson")).count(), 1
+        );
     }
 }
 ```  
+ 
 
+---
 
-
-> Custom refresh event publisher
-
-```java
-
-import org.springframework.cloud.context.refresh.ContextRefresher;
-import org.springframework.cloud.endpoint.RefreshEndpoint;
-
-...
-
-/**
- * See {@link RefreshEndpoint}
- */
-@Slf4j
-@AllArgsConstructor
-@RestController
-public class RefreshController {
-
-    private final ContextRefresher contextRefresher;
-
-    @PostMapping("/refresh")
-    public Set<String> refresh() {
-        logger.warn("## custom /refresh is called");
-        return contextRefresher.refresh();
-    }
-}
-```  
-
----  
 
 # References  
-
-- https://cloud.spring.io/spring-cloud-config/reference/html/  
-- https://medium.com/@circlee7/spring-cloud-config-%EC%A0%95%EB%A6%AC-1-%EB%B2%88%EC%99%B8-da81585400fa
+- https://github.com/cloud-native-java/rest  

@@ -1,5 +1,7 @@
 package client.domo;
 
+import lombok.ToString;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,6 +14,7 @@ import java.util.Set;
  * @since 2020-08-17
  */
 @Entity
+@ToString
 public class Movie {
 
     @Id
@@ -30,8 +33,4 @@ public class Movie {
         this.title = title;
     }
 
-    @Override
-    public String toString() {
-        return "";
-    }
 }

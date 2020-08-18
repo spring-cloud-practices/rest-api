@@ -1,2 +1,5 @@
 ### /api/customers
 GET {{host}}/api/v1/customers
+
+### /api/docs/api-guide.html
+GET {{host}}/docs/api-guide.html

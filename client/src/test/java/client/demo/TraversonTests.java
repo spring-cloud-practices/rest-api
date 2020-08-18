@@ -7,7 +7,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
@@ -15,14 +14,13 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.client.Traverson;
 
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 /**
  * @author Daeho Oh
  * @since 2020-08-17
  */
 @Slf4j
-public class TraversionTests {
+public class TraversonTests {
 
     private ConfigurableApplicationContext server;
 

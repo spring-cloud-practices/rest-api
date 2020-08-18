@@ -1,8 +1,8 @@
 package client.domo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class MoviesCommandLineRunner implements CommandLineRunner {
 
     private final TransactionTemplate transactionTemplate;
@@ -30,7 +31,7 @@ public class MoviesCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        transactionTemplate.execute(tx ->
+        List<Movie> movies = transactionTemplate.execute(tx ->
                 Stream.of("Cars (Owen Wilson,Paul Newman,Bonnie Hunt)",
                         "Batman (Michael Keaton,Jack Nicholson)",
                         "Lost in Translation (Bill Murray)")
@@ -47,5 +48,7 @@ public class MoviesCommandLineRunner implements CommandLineRunner {
                             return movieRepository.getOne(movie.id);
                         })
                         .collect(Collectors.toList()));
+
+        movies.forEach(m -> log.info(m.toString()));
     }
 }
