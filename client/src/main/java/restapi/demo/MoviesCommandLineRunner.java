@@ -1,4 +1,4 @@
-package client.demo;
+package restapi.demo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class MoviesCommandLineRunner implements CommandLineRunner {
                             Movie movie = movieRepository.save(new Movie(matcher.group(1)));
                             Arrays.stream(matcher.group(2).split(",")).map(String::trim).forEach(a -> {
                                 Actor actor = actorRepository.save(new Actor(a.trim(), movie));
-                                movie.actors.add(actorRepository.getOne(actor.id));
+                                movie.actors.add(actorRepository.getOne(actor.getId()));
                                 movieRepository.save(movie);
                             });
                             return movieRepository.getOne(movie.id);

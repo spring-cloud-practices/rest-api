@@ -1,4 +1,4 @@
-package client.demo;
+package restapi.demo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -58,7 +58,7 @@ public class TraversonTests {
         Assertions.assertTrue(actorCollectionModel.getContent().size() > 0);
         Assertions.assertEquals(
                 (int) actorCollectionModel.getContent().stream()
-                        .filter(a -> a.fullName.equals("Owen Wilson")).count(), 1
+                        .filter(a -> a.getFullName().equals("Owen Wilson")).count(), 1
         );
     }
 }

@@ -1,4 +1,4 @@
-package client.demo;
+package restapi.demo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

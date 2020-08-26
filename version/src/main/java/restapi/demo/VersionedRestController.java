@@ -1,4 +1,4 @@
-package version.demo;
+package restapi.demo;
 
 import org.springframework.web.bind.annotation.*;
 

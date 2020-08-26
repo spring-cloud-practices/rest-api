@@ -1,5 +1,6 @@
-package client.demo;
+package restapi.demo;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -13,18 +14,19 @@ import javax.persistence.ManyToOne;
  * @since 2020-08-17
  */
 @Entity
+@Getter
 @NoArgsConstructor
 @ToString(exclude = {"movie"})
 public class Actor {
 
     @Id
     @GeneratedValue
-    public Long id;
+    private Long id;
 
-    public String fullName;
+    private String fullName;
 
     @ManyToOne
-    public Movie movie;
+    private Movie movie;
 
     public Actor(String fullName, Movie movie) {
         this.fullName = fullName;

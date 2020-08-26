@@ -1,4 +1,4 @@
-package version.demo;
+package restapi.demo;
 
 /**
  * @author Daeho Oh

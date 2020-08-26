@@ -1,4 +1,4 @@
-package restdocs.demo;
+package restapi.demo;
 
 import lombok.Builder;
 import lombok.Getter;

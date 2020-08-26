@@ -1,4 +1,4 @@
-package client.demo;
+package restapi.demo;
 
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package version.demo;
+package restapi.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,10 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 2020-08-16
  */
 @SpringBootApplication
-public class VersionedApplication {
+public class RestdocsApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(VersionedApplication.class, args);
+        SpringApplication.run(RestdocsApplication.class, args);
     }
-
 }

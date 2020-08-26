@@ -1,4 +1,4 @@
-package client.demo;
+package restapi.demo;
 
 import lombok.ToString;
 
