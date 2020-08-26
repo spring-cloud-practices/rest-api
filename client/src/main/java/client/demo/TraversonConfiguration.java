@@ -1,13 +1,11 @@
-package client.domo;
+package client.demo;
 
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.event.EventListener;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
-import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;

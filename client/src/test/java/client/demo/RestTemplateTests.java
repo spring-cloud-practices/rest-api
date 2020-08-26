@@ -1,8 +1,5 @@
 package client.demo;
 
-import client.domo.ClientApplication;
-import client.domo.Movie;
-import client.domo.MovieRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;

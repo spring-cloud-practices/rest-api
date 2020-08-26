@@ -195,7 +195,7 @@ $ ./scripts/start.sh restdocs
 > ## 생성된 html 웹 서버에서 확인하기   
 - http 디렉토리의 `restdocs.http`의 http 요청을 실행한다.  
 ```
-### /api/docs/api-guide.html
+### /docs/api-guide.html
 GET {{host}}/docs/api-guide.html
 ```
 

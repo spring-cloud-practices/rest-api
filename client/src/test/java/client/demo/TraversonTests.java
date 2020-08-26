@@ -1,7 +1,5 @@
 package client.demo;
 
-import client.domo.Actor;
-import client.domo.ClientApplication;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;

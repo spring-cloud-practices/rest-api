@@ -1,4 +1,4 @@
-package client.domo;
+package client.demo;
 
 import lombok.ToString;
 

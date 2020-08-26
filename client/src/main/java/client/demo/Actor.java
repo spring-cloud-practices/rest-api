@@ -1,6 +1,5 @@
-package client.domo;
+package client.demo;
 
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 

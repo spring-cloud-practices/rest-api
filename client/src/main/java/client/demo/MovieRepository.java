@@ -1,4 +1,4 @@
-package client.domo;
+package client.demo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
